@@ -1,0 +1,139 @@
+<!DOCTYPE html>
+<html>
+<head>
+  <title>Single Page Application</title>
+  <link rel="stylesheet" href="/css/base.css"/>
+  <style>
+    .enabled {
+      background-color: green;
+      color: white
+    }
+    th{
+      font-weight: bold;
+    }
+  </style>
+
+</head>
+<body>
+
+<section ng-app="myApp">
+
+  <div ng-controller="HelloWorldController">
+    <h1>Angular Practice</h1>
+    <section>
+      <header><h2>Create a Contact</h2></header>
+      <form novalidate>
+        <input type="text" placeholder="Entry your name" ng-model="contact.name"/> <br/>
+        <input type="email" placeholder="Entry your email" ng-model="contact.email"/> <br/>
+        <input type="phone" placeholder="Entry your phone" ng-model="contact.phone"/> <br/>
+      </form>
+      <button ng-click="createContact()">Create Contact</button>
+    </section>
+
+    <section>
+      <header><h2>List of Contacts</h2></header>
+      <div><button ng-click="getContacts()">Get List of Contacts</button></div>
+      <label>Filter: <input ng-model="searchText"></label>
+      <!--<input type="text" class="enabled"/>-->
+      <table id="tblResults">
+        <tr><th>Name</th><th>Email</th><th>Phone</th></tr>
+        <tr ng-repeat="contact in contacts | filter:searchText">
+          <td>{{contact.name}}</td>
+          <td>{{contact.email}}</td>
+          <td>{{contact.phone}}</td>
+        </tr>
+      </table>
+      <ul>
+        <li ng-repeat="contact in contacts  | filter:searchText" ng-click="printContact(contact)">
+          <input type="text" ng-model="contact.name" ng-class="{enabled: contact.enabled}"/>
+          <input type="text" ng-model="contact.email" ng-class="{enabled: contact.enabled}"/>
+          <input type="text" ng-model="contact.phone" ng-class="{enabled: contact.enabled}"/>
+          <button ng-click="edit(contact)">Edit</button>
+          <button ng-click="updateContact(contact)">Save Changes</button>
+          <button ng-click="deleteContact(contact)">Delete</button>
+        </li>
+      </ul>
+    </section>
+  </div>
+
+</section>
+<script src="/angular/angular.js"></script>
+<script>
+
+  angular.module('myApp', []).controller('HelloWorldController', function ($scope, Contact) {
+
+    $scope.contact = {};
+    $scope.searchText;
+    $scope.createContact = function () {
+      Contact.create($scope.contact).success(function (data) {
+        console.log(data);
+        $scope.contact = {};
+      });
+    }
+
+    $scope.printContact = function (contact) {
+      console.log(contact._id);
+    }
+
+    $scope.edit = function (contact) {
+      contact.enabled = contact.enabled ? false : true;
+    };
+
+    $scope.updateContact = function (contact) {
+      console.log(contact);
+      Contact.update(contact);
+    };
+
+    $scope.deleteContact = function(contact){
+      console.log(contact);
+      Contact.delete(contact);
+    };
+
+    $scope.search = function (event) {
+      if (event.keyCode === 13) {
+        $http.get('https://api.github.com/search/repositories?', {
+          params: {
+            q: $scope.query
+          }
+        }).success(function (data) {
+          console.log(data);
+          $scope.repositories = data.items;
+        });
+      }
+    };
+
+
+    $scope.getContacts = function () {
+      Contact.get().success(function (contacts) {
+        $scope.contacts = contacts;
+      })
+    };
+
+
+  }).factory('Contact', function ($http) {
+
+    return {
+      create: function (contact_object) {
+        return $http.post('/contacts', contact_object);
+      },
+      get: function () {
+        //if we wan to cache this request we can use
+        // return $http.get('/contacts',{cache:true});
+        return $http.get('/contacts');
+      },
+      update: function (contact) {
+        return $http.put('/contacts/' + contact._id, contact);
+
+      },
+      delete: function (contact) {
+        return $http.delete('/contacts/' + contact._id, contact);
+      }
+    };
+
+  });
+
+  console.log(angular.module('myApp'));
+
+</script>
+</body>
+</html>
